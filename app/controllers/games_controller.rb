@@ -43,7 +43,7 @@ class GamesController < ApplicationController
     #   end
     # end
 
-    figures.find_by(number: figure).update_attribute(:color, color)
+    # figures.find_by(number: figure).update_attribute(:color, color)
 
     render json: {
       status: :ok,
@@ -52,7 +52,7 @@ class GamesController < ApplicationController
   end
 
   def update
-    Game.find_by(game_id: params[:id]).board.figures.find_by(number: params[:figure]).update_attribute(:color, params[:color])
+    # Game.find_by(game_id: params[:id]).board.figures.find_by(number: params[:figure]).update_attribute(:color, params[:color])
 
     render json: {status: :ok}
   end
