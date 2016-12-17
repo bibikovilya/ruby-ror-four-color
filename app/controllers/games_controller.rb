@@ -59,5 +59,4 @@ class GamesController < ApplicationController
     p params
     render json: {status: :ok}
   end
-
 end
