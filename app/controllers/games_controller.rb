@@ -3,8 +3,24 @@ class GamesController < ApplicationController
   def create
     game = Game.create(game_id: params[:id], first_turn: params[:first_turn])
     board = Board.create(game_id: game.id, width: params[:board][:width], height: params[:board][:height], figures_count: params[:board][:figures_count].to_i)
+
+    nei_hash = {}
+    arr = params[:board][:cells]
+    arr.each_with_index do |row, i|
+      row.each_with_index do |fig_num, j|
+        nei = []
+        nei << arr[i-1][j-1] if i>0 && j>0
+        nei << arr[i-1][j] if i>0
+        nei << arr[i][j-1] if j>0
+        nei << arr[i][j+1] if j<params[:board][:width]-1
+        nei << arr[i+1][j-1] if i<params[:board][:height]-1 && j>0
+        nei << arr[i+1][j] if i<params[:board][:height]-1
+        nei_hash[fig_num] = nei.uniq - [fig_num]
+      end
+    end
+
     params[:board][:figures_count].to_i.times do |i|
-      Figure.create(board_id: board.id, number: i, size: params[:board][:cells].flatten.group_by{|a|a}[i].size)
+      Figure.create(board_id: board.id, number: i, size: params[:board][:cells].flatten.group_by{|a|a}[i].size, nei_figures: nei_hash[i])
     end
 
     render json: {status: :ok}
@@ -16,12 +32,14 @@ class GamesController < ApplicationController
     board = game.board
     figures = board.figures
 
-    figure = figures.where(color: nil).order(size: :desc).first
-    # figures.where(color: nil).order(size: :desc).each do |f|
-    #
-    # end
-
-
+    figure = 0
+    figures.where(color: nil).order(size: :desc).each do |f|
+      nei_colors = figures.where(number: f.nei_figures).pluck(:color).compact.uniq
+      if nei_colors.exclude? color
+        figure = f.number
+        break
+      end
+    end
 
     figures.find_by(number: figure).update_attribute(:color, color)
 

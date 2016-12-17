@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20161217094737) do
+ActiveRecord::Schema.define(version: 20161217111950) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -28,6 +28,7 @@ ActiveRecord::Schema.define(version: 20161217094737) do
     t.integer "size"
     t.integer "color"
     t.integer "board_id"
+    t.text    "nei_figures", default: [], array: true
     t.index ["board_id"], name: "index_figures_on_board_id", using: :btree
   end
 
