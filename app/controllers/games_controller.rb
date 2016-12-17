@@ -16,7 +16,7 @@ class GamesController < ApplicationController
     board = game.board
     figures = board.figures
 
-    figure = rand(0...board.figures_count)
+    figure = figures.where(color: nil).order(size: :desc).first
     # figures.where(color: nil).order(size: :desc).each do |f|
     #
     # end
