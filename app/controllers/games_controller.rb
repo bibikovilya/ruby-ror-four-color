@@ -32,9 +32,10 @@ class GamesController < ApplicationController
     color = params[:color]
     game = Game.find_by(game_id: params[:id])
     board = game.board
-    figures = board.figures
+    # figures = board.figures
 
-    figure = rand(0...board.figures_count)
+    figure = ((0...board.figures_count).to_a - board.colored_figures.keys.map(&:to_i)).sample
+
     # figures.where(color: nil).order(size: :desc).each do |f|
     #   nei_colors = figures.where(number: f.nei_figures).pluck(:color).compact.uniq
     #   if nei_colors.exclude? color
@@ -45,6 +46,9 @@ class GamesController < ApplicationController
 
     # figures.find_by(number: figure).update_attribute(:color, color)
 
+    board.colored_figures[figure] = color
+    board.save
+
     render json: {
       status: :ok,
       figure: figure
@@ -53,6 +57,9 @@ class GamesController < ApplicationController
 
   def update
     # Game.find_by(game_id: params[:id]).board.figures.find_by(number: params[:figure]).update_attribute(:color, params[:color])
+    board = Game.find_by(game_id: params[:id]).board
+    board.colored_figures[params[:figure]] = params[:color]
+    board.save
 
     render json: {status: :ok}
   end
