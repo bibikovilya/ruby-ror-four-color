@@ -19,14 +19,16 @@ ActiveRecord::Schema.define(version: 20161217094737) do
     t.integer "width"
     t.integer "height"
     t.integer "figures_count"
-    t.integer "games_id"
-    t.index ["games_id"], name: "index_boards_on_games_id", using: :btree
+    t.integer "game_id"
+    t.index ["game_id"], name: "index_boards_on_game_id", using: :btree
   end
 
   create_table "figures", force: :cascade do |t|
     t.integer "number"
     t.integer "size"
     t.integer "color"
+    t.integer "board_id"
+    t.index ["board_id"], name: "index_figures_on_board_id", using: :btree
   end
 
   create_table "games", force: :cascade do |t|

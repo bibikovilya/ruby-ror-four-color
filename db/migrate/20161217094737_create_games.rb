@@ -9,13 +9,14 @@ class CreateGames < ActiveRecord::Migration[5.0]
       t.integer :width
       t.integer :height
       t.integer :figures_count
-      t.references :games
+      t.references :game
     end
 
     create_table :figures do |t|
       t.integer :number
       t.integer :size
       t.integer :color
+      t.references :board
     end
   end
 end
