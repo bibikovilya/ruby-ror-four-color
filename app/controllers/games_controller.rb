@@ -19,9 +19,11 @@ class GamesController < ApplicationController
     #   end
     # end
 
+    figures_att = []
     params[:board][:figures_count].to_i.times do |i|
-      Figure.create(board_id: board.id, number: i, size: params[:board][:cells].flatten.group_by{|a|a}[i].size)#, nei_figures: nei_hash[i])
+      figures_att << {board_id: board.id, number: i, size: params[:board][:cells].flatten.group_by{|a|a}[i].size}#, nei_figures: nei_hash[i])
     end
+    Figure.create(figures_att)
 
     render json: {status: :ok}
   end
