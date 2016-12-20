@@ -4,6 +4,7 @@ class GamesController < ApplicationController
     game = Game.create(game_id: params[:id], first_turn: params[:first_turn])
     board = Board.create(game_id: game.id, width: params[:board][:width], height: params[:board][:height], figures_count: params[:board][:figures_count].to_i)
 
+    # calc neighbour
     # nei_hash = {}
     # arr = params[:board][:cells]
     # arr.each_with_index do |row, i|
@@ -19,11 +20,14 @@ class GamesController < ApplicationController
     #   end
     # end
 
+    # size calc
     # figures_att = []
     # params[:board][:figures_count].to_i.times do |i|
     #   figures_att << {board_id: board.id, number: i, size: params[:board][:cells].flatten.group_by{|a|a}[i].size}#, nei_figures: nei_hash[i])
     # end
     # Figure.create(figures_att)
+
+    session[:game] = 'fuck'
 
     render json: {status: :ok}
   end
@@ -36,6 +40,7 @@ class GamesController < ApplicationController
 
     figure = ((0...board.figures_count).to_a - board.colored_figures.keys.map(&:to_i)).sample
 
+    # get figures by size
     # figures.where(color: nil).order(size: :desc).each do |f|
     #   nei_colors = figures.where(number: f.nei_figures).pluck(:color).compact.uniq
     #   if nei_colors.exclude? color
@@ -44,10 +49,12 @@ class GamesController < ApplicationController
     #   end
     # end
 
-    # figures.find_by(number: figure).update_attribute(:color, color)
-
     board.colored_figures[figure] = color
     board.save
+
+    p '*'*50
+    p session[:game]
+    p '*'*50
 
     render json: {
       status: :ok,
@@ -56,7 +63,6 @@ class GamesController < ApplicationController
   end
 
   def update
-    # Game.find_by(game_id: params[:id]).board.figures.find_by(number: params[:figure]).update_attribute(:color, params[:color])
     board = Game.find_by(game_id: params[:id]).board
     board.colored_figures[params[:figure]] = params[:color]
     board.save
