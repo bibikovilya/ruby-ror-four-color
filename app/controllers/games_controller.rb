@@ -27,7 +27,7 @@ class GamesController < ApplicationController
     # end
     # Figure.create(figures_att)
 
-    session[:game] = 'fuck'
+    $redis.set(:game, 'fuck')
 
     render json: {status: :ok}
   end
@@ -53,7 +53,7 @@ class GamesController < ApplicationController
     board.save
 
     p '*'*50
-    p session[:game]
+    p $redis.get(:game)
     p '*'*50
 
     render json: {

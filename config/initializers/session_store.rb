@@ -1,1 +1,0 @@
-FourColorBots::Application.config.session_store :redis_store, servers: ENV.fetch('REDIS_URL')
