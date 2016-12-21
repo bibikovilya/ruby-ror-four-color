@@ -98,8 +98,7 @@ class GamesController < ApplicationController
     $redis.del :figures_count
     $redis.del :used_figures
 
-    Game.delete_all
-    Board.delete_all
+    Game.find_by(game_id: params[:id]).destroy
 
     render json: {status: :ok}
   end
