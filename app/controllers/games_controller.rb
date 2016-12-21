@@ -50,7 +50,6 @@ class GamesController < ApplicationController
     color = params[:color]
     game = Game.find_by(game_id: params[:id])
     board = game.board
-    # figures = board.figures
 
     figure = ((0...board.figures_count).to_a - board.colored_figures.keys.map(&:to_i)).sample
 
@@ -58,6 +57,8 @@ class GamesController < ApplicationController
 
     p '*'*50
     p "db: #{figure}"
+    p "figures_count: #{$redis.get(:figures_count)}"
+    p "used_figures: #{$redis.get(:used_figures)}"
     p "redis: #{redis_figure}"
     p '*'*50
 
@@ -96,6 +97,9 @@ class GamesController < ApplicationController
     $redis.del :height
     $redis.del :figures_count
     $redis.del :used_figures
+
+    Game.delete_all
+    Board.delete_all
 
     render json: {status: :ok}
   end
