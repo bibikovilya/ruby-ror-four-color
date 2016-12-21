@@ -104,7 +104,7 @@ class GamesController < ApplicationController
   end
 
   def fill(figure)
-    new_val = ($redis.keys.exclude?('used_figures') || $redis.get(:used_figures).empty?) ? figure.to_s : $redis.get(:used_figures) + ',' + figure.to_s
+    new_val = ($redis.keys.include?('used_figures') && $redis.get(:used_figures).present?) ? $redis.get(:used_figures) + ',' + figure.to_s : figure.to_s
     $redis.set(:used_figures, new_val)
   end
 end
