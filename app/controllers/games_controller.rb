@@ -4,6 +4,24 @@ class GamesController < ApplicationController
     game = Game.create(game_id: params[:id], first_turn: params[:first_turn])
     board = Board.create(game_id: game.id, width: params[:board][:width], height: params[:board][:height], figures_count: params[:board][:figures_count].to_i)
 
+    $redis.set(:game_id, params[:id])
+    $redis.set(:first_turn, params[:first_turn])
+
+    $redis.set(:width, params[:board][:width])
+    $redis.set(:height, params[:board][:height])
+    $redis.set(:figures_count, params[:board][:figures_count])
+
+    $redis.set(:used_figures, '')
+
+    $redis.expire(:game_id, 600)
+    $redis.expire(:first_turn, 600)
+    $redis.expire(:width, 600)
+    $redis.expire(:height, 600)
+    $redis.expire(:figures_count, 600)
+    $redis.expire(:used_figures, 600)
+
+    byebug
+
     # calc neighbour
     # nei_hash = {}
     # arr = params[:board][:cells]
@@ -27,8 +45,6 @@ class GamesController < ApplicationController
     # end
     # Figure.create(figures_att)
 
-    $redis.set(:game, 'fuck')
-
     render json: {status: :ok}
   end
 
@@ -39,6 +55,13 @@ class GamesController < ApplicationController
     # figures = board.figures
 
     figure = ((0...board.figures_count).to_a - board.colored_figures.keys.map(&:to_i)).sample
+
+    redis_figure = ((0...$redis.get(:figures_count).to_i).to_a - ($redis.get(:used_figures) || '').split(',').map(&:to_i)).sample
+
+    p '*'*50
+    p "db: #{figure}"
+    p "redis: #{redis_figure}"
+    p '*'*50
 
     # get figures by size
     # figures.where(color: nil).order(size: :desc).each do |f|
@@ -52,10 +75,6 @@ class GamesController < ApplicationController
     board.colored_figures[figure] = color
     board.save
 
-    p '*'*50
-    p $redis.get(:game)
-    p '*'*50
-
     render json: {
       status: :ok,
       figure: figure
@@ -67,11 +86,24 @@ class GamesController < ApplicationController
     board.colored_figures[params[:figure]] = params[:color]
     board.save
 
+    fill params[:figure]
+
     render json: {status: :ok}
   end
 
   def destroy
-    p params
+    $redis.del :game_id
+    $redis.del :first_turn
+    $redis.del :width
+    $redis.del :height
+    $redis.del :figures_count
+    $redis.del :used_figures
+
     render json: {status: :ok}
+  end
+
+  def fill(figure)
+    new_val = ($redis.keys.exclude?('used_figures') || $redis.get(:used_figures).empty?) ? figure.to_s : $redis.get(:used_figures) + ',' + figure.to_s
+    $redis.set(:used_figures, new_val)
   end
 end
