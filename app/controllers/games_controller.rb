@@ -20,8 +20,6 @@ class GamesController < ApplicationController
     $redis.expire(:figures_count, 600)
     $redis.expire(:used_figures, 600)
 
-    byebug
-
     # calc neighbour
     # nei_hash = {}
     # arr = params[:board][:cells]
