@@ -1,8 +1,9 @@
 class GamesController < ApplicationController
 
   def create
-    game = Game.create(game_id: params[:id], first_turn: params[:first_turn])
-    board = Board.create(game_id: game.id, width: params[:board][:width], height: params[:board][:height], figures_count: params[:board][:figures_count].to_i)
+    # DB
+    # game = Game.create(game_id: params[:id], first_turn: params[:first_turn])
+    # board = Board.create(game_id: game.id, width: params[:board][:width], height: params[:board][:height], figures_count: params[:board][:figures_count].to_i)
 
     $redis.set(params[:id], "{first_turn: #{params[:first_turn]}, width: #{params[:board][:width]}, height: #{params[:board][:height]}, figures_count: #{params[:board][:figures_count]}, used_figures: [] }")
 
@@ -36,16 +37,17 @@ class GamesController < ApplicationController
 
   def show
     color = params[:color]
-    game = Game.find_by(game_id: params[:id])
-    board = game.board
+    # DB
+    # game = Game.find_by(game_id: params[:id])
+    # board = game.board
 
-    figure = ((0...board.figures_count).to_a - board.colored_figures.keys.map(&:to_i)).sample
+    # figure = ((0...board.figures_count).to_a - board.colored_figures.keys.map(&:to_i)).sample
 
     redis_figure = get_figure params[:id]
 
     p '*'*50
     p "game: #{params[:id]}"
-    p "db: #{figure}"
+    # p "db: #{figure}"
     p "data: #{$redis.get(params[:id])}"
     p "redis: #{redis_figure}"
     p '*'*50
@@ -59,19 +61,21 @@ class GamesController < ApplicationController
     #   end
     # end
 
-    board.colored_figures[figure] = color
-    board.save
+    # DB
+    # board.colored_figures[figure] = color
+    # board.save
 
     render json: {
       status: :ok,
-      figure: figure
+      figure: redis_figure
     }
   end
 
   def update
-    board = Game.find_by(game_id: params[:id]).board
-    board.colored_figures[params[:figure]] = params[:color]
-    board.save
+    # DB
+    # board = Game.find_by(game_id: params[:id]).board
+    # board.colored_figures[params[:figure]] = params[:color]
+    # board.save
 
     fill(params[:id], params[:figure])
 
@@ -81,7 +85,8 @@ class GamesController < ApplicationController
   def destroy
     $redis.del params[:id]
 
-    Game.find_by(game_id: params[:id]).destroy
+    # DB
+    # Game.find_by(game_id: params[:id]).destroy
 
     render json: {status: :ok}
   end
