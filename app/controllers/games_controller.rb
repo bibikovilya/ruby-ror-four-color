@@ -88,7 +88,7 @@ class GamesController < ApplicationController
 
   def get_data(game_id)
     data = $redis.get(game_id)
-    eval(data) if data
+    data ? eval(data) : {}
   end
 
   def save_data(game_id, data)
