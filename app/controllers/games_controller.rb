@@ -53,16 +53,18 @@ class GamesController < ApplicationController
   end
 
   def get_figure(color)
-    data = $redis.get("#{params[:id]}_cells")
-    return [] unless data
-    cells = eval(data)
-    hash = {}
+    # data = $redis.get("#{params[:id]}_cells")
+    # return [] unless data
+    # cells = eval(data)
+    # hash = {}
 
-    get_available_figures_for(color).each do |f|
-      hash[f] = cells.flatten.count(f)
-    end
+    # get_available_figures_for(color).each do |f|
+    #   hash[f] = cells.flatten.count(f)
+    # end
 
-    hash.select{|k,v| v == hash.values.min}.keys.sample
+    # hash.select{|k,v| v == hash.values.min}.keys.sample
+    
+    get_available_figures_for(color).sample
   end
 
   def get_available_figures_for(color)
