@@ -2,7 +2,7 @@ class GamesController < ApplicationController
 
   def create
     $redis.set(params[:id], "{first_turn: #{params[:first_turn]}, width: #{params[:board][:width]}, height: #{params[:board][:height]}, figures_count: #{params[:board][:figures_count]}}")
-    $redis.set("#{params[:id]}_cells", params[:board][:cells].flatten)
+    $redis.set("#{params[:id]}_cells", params[:board][:cells])
     available_figures = (0...params[:board][:figures_count]).to_a
     $redis.set("#{params[:id]}_0", available_figures)
     $redis.set("#{params[:id]}_1", available_figures)
@@ -16,42 +16,10 @@ class GamesController < ApplicationController
     $redis.expire("#{params[:id]}_2", 600)
     $redis.expire("#{params[:id]}_3", 600)
 
-    # calc neighbour
-    # nei_hash = {}
-    # arr = params[:board][:cells]
-    # arr.each_with_index do |row, i|
-    #   row.each_with_index do |fig_num, j|
-    #     nei = []
-    #     nei << arr[i-1][j-1] if i>0 && j>0
-    #     nei << arr[i-1][j] if i>0
-    #     nei << arr[i][j-1] if j>0
-    #     nei << arr[i][j+1] if j<params[:board][:width]-1
-    #     nei << arr[i+1][j-1] if i<params[:board][:height]-1 && j>0
-    #     nei << arr[i+1][j] if i<params[:board][:height]-1
-    #     nei_hash[fig_num] = nei.uniq - [fig_num]
-    #   end
-    # end
-
-    # size calc
-    # figures_att = []
-    # params[:board][:figures_count].to_i.times do |i|
-    #   figures_att << {board_id: board.id, number: i, size: params[:board][:cells].flatten.group_by{|a|a}[i].size}#, nei_figures: nei_hash[i])
-    # end
-    # Figure.create(figures_att)
-
     render json: {status: :ok}
   end
 
   def show
-    # get figures by size
-    # figures.where(color: nil).order(size: :desc).each do |f|
-    #   nei_colors = figures.where(number: f.nei_figures).pluck(:color).compact.uniq
-    #   if nei_colors.exclude? color
-    #     figure = f.number
-    #     break
-    #   end
-    # end
-
     render json: {
       status: :ok,
       figure: get_figure(params[:color])
@@ -59,7 +27,7 @@ class GamesController < ApplicationController
   end
 
   def update
-    fill(params[:figure], params[:color])
+    fill(params[:figure].to_i, params[:color].to_i)
 
     p '*'*50
     p "data: #{$redis.get(params[:id])}"
@@ -87,7 +55,10 @@ class GamesController < ApplicationController
   # =================================================================
 
   def fill(figure, color)
-    $redis.set("#{params[:id]}_#{color}", get_available_figures_for(color) - [figure.to_i])
+    $redis.set("#{params[:id]}_#{color}", get_available_figures_for(color) - ([figure] + neighbor_for(figure)))
+    ((0..3).to_a - [color]).each do |c|
+      $redis.set("#{params[:id]}_#{c}", get_available_figures_for(c) - [figure])
+    end
   end
 
   def get_figure(color)
@@ -97,5 +68,39 @@ class GamesController < ApplicationController
   def get_available_figures_for(color)
     data = $redis.get("#{params[:id]}_#{color}")
     data ? eval(data) : []
+  end
+
+  def neighbor_for(figure)
+    data = $redis.get("#{params[:id]}_cells")
+    return [] unless data
+    cells = eval(data)
+
+    data = $redis.get(params[:id])
+    return [] unless data
+    width = eval(data)[:width]
+    height = eval(data)[:height]
+
+    neighbours = []
+    cells.each_with_index do |row, i|
+      row.each_with_index do |current_figure, j|
+        if figure == current_figure
+          neighbours << cells[i][j-1] if j>0
+          neighbours << cells[i][j+1] if (j+1)<width
+          
+          neighbours << cells[i-1][j] if i>0
+          neighbours << cells[i+1][j] if (i+1)<height
+          
+          if i%2==0
+            neighbours << cells[i-1][j-1] if i>0 && j>0
+            neighbours << cells[i+1][j-1] if (i+1)<height && j>0
+          else
+            neighbours << cells[i-1][j+1] if i>0 && (j+1)<width
+            neighbours << cells[i+1][j+1] if (i+1)<height && (j+1)<width
+          end
+        end
+      end
+    end
+
+    neighbours.compact.uniq - [figure]
   end
 end
