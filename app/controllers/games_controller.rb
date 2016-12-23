@@ -1,13 +1,20 @@
 class GamesController < ApplicationController
 
   def create
-    # DB
-    # game = Game.create(game_id: params[:id], first_turn: params[:first_turn])
-    # board = Board.create(game_id: game.id, width: params[:board][:width], height: params[:board][:height], figures_count: params[:board][:figures_count].to_i)
-
-    $redis.set(params[:id], "{first_turn: #{params[:first_turn]}, width: #{params[:board][:width]}, height: #{params[:board][:height]}, figures_count: #{params[:board][:figures_count]}, used_figures: [] }")
+    $redis.set(params[:id], "{first_turn: #{params[:first_turn]}, width: #{params[:board][:width]}, height: #{params[:board][:height]}, figures_count: #{params[:board][:figures_count]}}")
+    $redis.set("#{params[:id]}_cells", params[:board][:cells].flatten)
+    available_figures = (0...params[:board][:figures_count]).to_a
+    $redis.set("#{params[:id]}_0", available_figures)
+    $redis.set("#{params[:id]}_1", available_figures)
+    $redis.set("#{params[:id]}_2", available_figures)
+    $redis.set("#{params[:id]}_3", available_figures)
 
     $redis.expire(params[:id], 600)
+    $redis.expire("#{params[:id]}_cells", 600)
+    $redis.expire("#{params[:id]}_0", 600)
+    $redis.expire("#{params[:id]}_1", 600)
+    $redis.expire("#{params[:id]}_2", 600)
+    $redis.expire("#{params[:id]}_3", 600)
 
     # calc neighbour
     # nei_hash = {}
@@ -36,22 +43,6 @@ class GamesController < ApplicationController
   end
 
   def show
-    color = params[:color]
-    # DB
-    # game = Game.find_by(game_id: params[:id])
-    # board = game.board
-
-    # figure = ((0...board.figures_count).to_a - board.colored_figures.keys.map(&:to_i)).sample
-
-    redis_figure = get_figure params[:id]
-
-    p '*'*50
-    p "game: #{params[:id]}"
-    # p "db: #{figure}"
-    p "data: #{$redis.get(params[:id])}"
-    p "redis: #{redis_figure}"
-    p '*'*50
-
     # get figures by size
     # figures.where(color: nil).order(size: :desc).each do |f|
     #   nei_colors = figures.where(number: f.nei_figures).pluck(:color).compact.uniq
@@ -61,56 +52,50 @@ class GamesController < ApplicationController
     #   end
     # end
 
-    # DB
-    # board.colored_figures[figure] = color
-    # board.save
-
     render json: {
       status: :ok,
-      figure: redis_figure
+      figure: get_figure(params[:color])
     }
   end
 
   def update
-    # DB
-    # board = Game.find_by(game_id: params[:id]).board
-    # board.colored_figures[params[:figure]] = params[:color]
-    # board.save
+    fill(params[:figure], params[:color])
 
-    fill(params[:id], params[:figure])
+    p '*'*50
+    p "data: #{$redis.get(params[:id])}"
+    p "cells: #{$redis.get("#{params[:id]}_cells")}"
+    p "0: #{$redis.get("#{params[:id]}_0")}"
+    p "1: #{$redis.get("#{params[:id]}_1")}"
+    p "2: #{$redis.get("#{params[:id]}_2")}"
+    p "3: #{$redis.get("#{params[:id]}_3")}"
+    p '*'*50
 
     render json: {status: :ok}
   end
 
   def destroy
     $redis.del params[:id]
-
-    # DB
-    # Game.find_by(game_id: params[:id]).destroy
+    $redis.del "#{params[:id]}_cells"
+    $redis.del "#{params[:id]}_0"
+    $redis.del "#{params[:id]}_1"
+    $redis.del "#{params[:id]}_2"
+    $redis.del "#{params[:id]}_3"
 
     render json: {status: :ok}
   end
 
-  def get_data(game_id)
-    data = $redis.get(game_id)
-    data ? eval(data) : {}
+  # =================================================================
+
+  def fill(figure, color)
+    $redis.set("#{params[:id]}_#{color}", get_available_figures_for(color) - [figure.to_i])
   end
 
-  def save_data(game_id, data)
-    $redis.set(game_id, data.to_s)
+  def get_figure(color)
+    get_available_figures_for(color).sample
   end
 
-  def fill(game_id, figure)
-    # new_val = ($redis.keys.include?('used_figures') && $redis.get(:used_figures).present?) ? $redis.get(:used_figures) + ',' + figure.to_s : figure.to_s
-    # $redis.set(:used_figures, new_val)
-
-    data = get_data(game_id)
-    data[:used_figures] << figure.to_i
-    save_data(game_id, data)
-  end
-
-  def get_figure(game_id)
-    data = get_data game_id
-    ((0...data[:figures_count].to_i).to_a - data[:used_figures]).sample
+  def get_available_figures_for(color)
+    data = $redis.get("#{params[:id]}_#{color}")
+    data ? eval(data) : []
   end
 end
