@@ -29,15 +29,6 @@ class GamesController < ApplicationController
   def update
     fill(params[:figure].to_i, params[:color].to_i)
 
-    p '*'*50
-    p "data: #{$redis.get(params[:id])}"
-    p "cells: #{$redis.get("#{params[:id]}_cells")}"
-    p "0: #{$redis.get("#{params[:id]}_0")}"
-    p "1: #{$redis.get("#{params[:id]}_1")}"
-    p "2: #{$redis.get("#{params[:id]}_2")}"
-    p "3: #{$redis.get("#{params[:id]}_3")}"
-    p '*'*50
-
     render json: {status: :ok}
   end
 
