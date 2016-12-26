@@ -11,9 +11,9 @@ class GamesController < ApplicationController
     $redis.set("#{params[:id]}_3", available_figures)
 
     sizes = {}
-    cells = params[:board][:cells]
+    cells = params[:board][:cells].flatten
     available_figures.each do |f|
-      (sizes[cells.flatten.count(f)] ||= []) << f
+      (sizes[cells.count(f)] ||= []) << f
     end
     $redis.set("#{params[:id]}_size", sizes)
 
