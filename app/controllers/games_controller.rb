@@ -3,18 +3,28 @@ class GamesController < ApplicationController
   def create
     $redis.set(params[:id], "{first_turn: #{params[:first_turn]}, width: #{params[:board][:width]}, height: #{params[:board][:height]}, figures_count: #{params[:board][:figures_count]}}")
     $redis.set("#{params[:id]}_cells", params[:board][:cells])
+
     available_figures = (0...params[:board][:figures_count]).to_a
     $redis.set("#{params[:id]}_0", available_figures)
     $redis.set("#{params[:id]}_1", available_figures)
     $redis.set("#{params[:id]}_2", available_figures)
     $redis.set("#{params[:id]}_3", available_figures)
 
+    sizes = {}
+    cells = params[:board][:cells]
+    available_figures.each do |f|
+      (sizes[cells.flatten.count(f)] ||= []) << f
+    end
+    $redis.set("#{params[:id]}_size", sizes)
+
     $redis.expire(params[:id], 600)
     $redis.expire("#{params[:id]}_cells", 600)
+    $redis.expire("#{params[:id]}_size", 600)
     $redis.expire("#{params[:id]}_0", 600)
     $redis.expire("#{params[:id]}_1", 600)
     $redis.expire("#{params[:id]}_2", 600)
     $redis.expire("#{params[:id]}_3", 600)
+
 
     render json: {status: :ok}
   end
@@ -39,6 +49,7 @@ class GamesController < ApplicationController
     $redis.del "#{params[:id]}_1"
     $redis.del "#{params[:id]}_2"
     $redis.del "#{params[:id]}_3"
+    $redis.del "#{params[:id]}_size"
 
     render json: {status: :ok}
   end
@@ -53,18 +64,17 @@ class GamesController < ApplicationController
   end
 
   def get_figure(color)
-    # data = $redis.get("#{params[:id]}_cells")
-    # return [] unless data
-    # cells = eval(data)
-    # hash = {}
+    data = $redis.get("#{params[:id]}_size")
+    sizes = data ? eval(data) : {}
+    ava = get_available_figures_for(color)
 
-    # get_available_figures_for(color).each do |f|
-    #   hash[f] = cells.flatten.count(f)
-    # end
+    f = nil
+    sizes.keys.sort.each do |s|
+      f = (sizes[s] & ava).sample
+      break if f
+    end
 
-    # hash.select{|k,v| v == hash.values.min}.keys.sample
-    
-    get_available_figures_for(color).sample
+    f || ava.sample
   end
 
   def get_available_figures_for(color)
